@@ -1,5 +1,5 @@
 """
-HFT Live Dashboard - State Manager
+AlgoViz Dashboard - State Manager
 ===================================
 
 Thread-safe state management using circular buffers.
@@ -79,7 +79,7 @@ class VelocityPoint:
 
 class StateManager:
     """
-    Thread-safe state management for HFT dashboard.
+    Thread-safe state management for AlgoViz dashboard.
     
     Uses collections.deque with maxlen for automatic circular buffer behavior.
     All public methods are thread-safe using a reentrant lock.

@@ -1,5 +1,5 @@
 """
-HFT Live Dashboard - Feature Engine
+AlgoViz Dashboard - Feature Engine
 =====================================
 
 Calculates all trading features from raw data.
@@ -40,9 +40,11 @@ class Features:
     spread: float = 0.0
     spread_bps: float = 0.0
     
-    # VWAP
+    # VWAP & TWAP
     vwap: float = 0.0
+    twap: float = 0.0
     price_vs_vwap: float = 0.0
+    price_vs_twap: float = 0.0
     
     # Order book
     imbalance: float = 0.0
@@ -73,7 +75,9 @@ class Features:
             "spread": self.spread,
             "spread_bps": self.spread_bps,
             "vwap": self.vwap,
+            "twap": self.twap,
             "price_vs_vwap": self.price_vs_vwap,
+            "price_vs_twap": self.price_vs_twap,
             "imbalance": self.imbalance,
             "imbalance_pct": self.imbalance_pct,
             "bid_volume": self.bid_volume,
@@ -141,6 +145,10 @@ class FeatureEngine:
                 features.imbalance_pct = features.imbalance * 100
                 features.bid_volume = depth.bid_volume
                 features.ask_volume = depth.ask_volume
+            else:
+                # Use cached spread values from StateManager when depth is temporarily unavailable
+                features.spread_bps = self.state.get_current_spread_bps()
+                features.mid_price = self.state.get_current_mid_price()
             
             # Current price
             features.current_price = self.state.get_current_price()
@@ -157,9 +165,17 @@ class FeatureEngine:
             # VWAP (30-second window)
             features.vwap = self._calculate_vwap(now)
             
+            # TWAP (30-second window)
+            features.twap = self._calculate_twap(now)
+            
             # Price vs VWAP
             features.price_vs_vwap = self._calculate_price_vs_vwap(
                 features.current_price, features.vwap
+            )
+            
+            # Price vs TWAP
+            features.price_vs_twap = self._calculate_price_vs_twap(
+                features.current_price, features.twap
             )
             
             # Trade velocity (3-second window, smoothed)
@@ -276,6 +292,70 @@ class FeatureEngine:
             return 0.0
         
         return ((price - vwap) / vwap) * 100
+    
+    # =========================================================================
+    # TWAP CALCULATION
+    # =========================================================================
+    
+    def _calculate_twap(self, now: datetime) -> float:
+        """
+        Calculate Time-Weighted Average Price.
+        
+        Formula: Σ(Price × TimeWeight) / Σ(TimeWeight)
+        Window: Last VWAP_WINDOW_SECONDS seconds
+        
+        TWAP gives equal weight to each time interval regardless of volume,
+        making it useful for reducing market impact in execution algorithms.
+        """
+        cutoff = now - timedelta(seconds=VWAP_WINDOW_SECONDS)
+        trades = self.state.get_trades_since(cutoff)
+        
+        if not trades:
+            # Return current price if no trades
+            return self.state.get_current_price()
+        
+        # Sort trades by timestamp
+        sorted_trades = sorted(trades, key=lambda t: t.timestamp)
+        
+        if len(sorted_trades) == 1:
+            return sorted_trades[0].price
+        
+        total_time_weighted_price = 0.0
+        total_time = 0.0
+        
+        for i in range(len(sorted_trades) - 1):
+            current_trade = sorted_trades[i]
+            next_trade = sorted_trades[i + 1]
+            
+            # Time duration this price was "active"
+            time_delta = (next_trade.timestamp - current_trade.timestamp).total_seconds()
+            
+            if time_delta > 0:
+                total_time_weighted_price += current_trade.price * time_delta
+                total_time += time_delta
+        
+        # Add the last trade with remaining time to 'now'
+        last_trade = sorted_trades[-1]
+        remaining_time = (now - last_trade.timestamp).total_seconds()
+        if remaining_time > 0:
+            total_time_weighted_price += last_trade.price * remaining_time
+            total_time += remaining_time
+        
+        if total_time <= 0:
+            return self.state.get_current_price()
+        
+        return total_time_weighted_price / total_time
+    
+    def _calculate_price_vs_twap(self, price: float, twap: float) -> float:
+        """
+        Calculate price deviation from TWAP as percentage.
+        
+        Formula: ((Price - TWAP) / TWAP) × 100
+        """
+        if twap <= 0 or price <= 0:
+            return 0.0
+        
+        return ((price - twap) / twap) * 100
     
     # =========================================================================
     # VELOCITY CALCULATION

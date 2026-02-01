@@ -1,5 +1,5 @@
 """
-HFT Live Dashboard - Professional UI Components
+AlgoViz - Professional UI Components
 =================================================
 
 Premium Streamlit UI components for the trading dashboard.
@@ -29,7 +29,7 @@ from features.feature_engine import Features
 
 class Components:
     """
-    Professional UI Components for the HFT Dashboard.
+    Professional UI Components for the AlgoViz Dashboard.
     
     All methods are static and return Streamlit elements.
     """
@@ -52,8 +52,8 @@ class Components:
             <div class="logo-section">
                 <div class="logo-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">📈</div>
                 <div class="logo-text">
-                    <div class="logo-title" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">HFT Trading Dashboard</div>
-                    <div class="logo-subtitle" style="color: #a0aec0;">Real-time Market Intelligence • <span style="color: #f59e0b;">BTC/USDT</span></div>
+                    <div class="logo-title" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">AlgoViz</div>
+                    <div class="logo-subtitle" style="color: #a0aec0;">See the Signal in the Noise • <span style="color: #f59e0b;">BTC/USDT</span></div>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 16px;">
@@ -151,17 +151,21 @@ class Components:
         """
         Render premium KPI metrics bar with glassmorphism cards.
         Each card has a unique color accent for visual distinction.
+        Organized in two rows for better readability.
         """
-        # Card style for uniformity
-        card_style = "min-height:110px; display:flex; flex-direction:column; justify-content:center;"
-        label_style = "font-size:10px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;"
-        value_style = "font-size:22px; font-weight:700; line-height:1.2;"
-        delta_style = "font-size:10px; margin-top:4px;"
+        # Check if we're still waiting for data (current_price == 0)
+        is_loading = features.current_price <= 0
         
-        cols = st.columns(6)
+        # Card style for uniformity
+        card_style = "min-height:100px; display:flex; flex-direction:column; justify-content:center;"
+        label_style = "font-size:10px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;"
+        value_style = "font-size:20px; font-weight:700; line-height:1.2;"
+        delta_style = "font-size:10px; margin-top:4px;"
         
         # Helper for price formatting
         def fmt_price(val):
+            if val <= 0:
+                return "---"  # Show loading placeholder
             if val >= 1_000_000:
                 return f"${val/1_000_000:.2f}M"
             elif val >= 10_000:
@@ -169,85 +173,184 @@ class Components:
             else:
                 return f"${val:,.2f}"
         
+        # Show loading banner if no data yet
+        if is_loading:
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15)); 
+                        border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; 
+                        padding: 12px 20px; margin-bottom: 16px; text-align: center;">
+                <span style="color: #a78bfa; font-size: 14px;">⏳ Waiting for market data... WebSocket connecting...</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # ===================== ROW 1: Price & Core Metrics (4 KPIs) =====================
+        row1_cols = st.columns(4)
+        
         # 1. Current Price - GOLD accent
-        with cols[0]:
+        with row1_cols[0]:
+            price_display = fmt_price(features.current_price)
+            price_color = "#a0aec0" if is_loading else "#fbbf24"
             st.markdown(f"""
             <div class="kpi-card" style="border-top: 3px solid #f59e0b; {card_style}">
                 <div style="color: #f59e0b; {label_style}">💰 PRICE</div>
-                <div style="color: #fbbf24; {value_style}">{fmt_price(features.current_price)}</div>
+                <div style="color: {price_color}; {value_style}">{price_display}</div>
                 <div style="color: #a0aec0; {delta_style}">BTC/USDT</div>
             </div>
             """, unsafe_allow_html=True)
         
         # 2. Price Change - GREEN/RED based on value
-        with cols[1]:
-            is_positive = features.price_change_pct >= 0
-            arrow = "▲" if is_positive else "▼"
-            color = "#10b981" if is_positive else "#ef4444"
+        with row1_cols[1]:
+            if is_loading:
+                change_display = "---"
+                delta_display = "---"
+                color = "#a0aec0"
+                arrow = "•"
+            else:
+                is_positive = features.price_change_pct >= 0
+                arrow = "▲" if is_positive else "▼"
+                color = "#10b981" if is_positive else "#ef4444"
+                change_display = f"{abs(features.price_change_pct):.2f}%"
+                delta_display = f"{'+' if is_positive else ''}{features.price_change:.2f}"
             
             st.markdown(f"""
             <div class="kpi-card" style="border-top: 3px solid {color}; {card_style}">
                 <div style="color: {color}; {label_style}">📊 CHANGE</div>
-                <div style="color: {color}; {value_style}">{arrow} {abs(features.price_change_pct):.2f}%</div>
-                <div style="color: {color}; {delta_style}">{'+' if is_positive else ''}{features.price_change:.2f}</div>
+                <div style="color: {color}; {value_style}">{arrow} {change_display}</div>
+                <div style="color: {color}; {delta_style}">{delta_display}</div>
             </div>
             """, unsafe_allow_html=True)
         
         # 3. Spread (bps) - PURPLE accent
-        with cols[2]:
-            spread_color = Theme.get_spread_color(features.spread_bps)
-            status = "Tight" if features.spread_bps < 3 else ("Normal" if features.spread_bps < 6 else "Wide")
+        with row1_cols[2]:
+            if is_loading:
+                spread_display = "---"
+                spread_color = "#a0aec0"
+                status = "Waiting..."
+            else:
+                # Use more precision for very small spreads (< 0.1 bps)
+                if features.spread_bps < 0.1:
+                    spread_display = f"{features.spread_bps:.4f} bps"
+                else:
+                    spread_display = f"{features.spread_bps:.2f} bps"
+                spread_color = Theme.get_spread_color(features.spread_bps)
+                status = "Ultra-Tight" if features.spread_bps < 0.01 else ("Tight" if features.spread_bps < 3 else ("Normal" if features.spread_bps < 6 else "Wide"))
             
             st.markdown(f"""
             <div class="kpi-card" style="border-top: 3px solid #8b5cf6; {card_style}">
                 <div style="color: #a78bfa; {label_style}">📏 SPREAD</div>
-                <div style="color: {spread_color}; {value_style}">{features.spread_bps:.2f} bps</div>
+                <div style="color: {spread_color}; {value_style}">{spread_display}</div>
                 <div style="color: {spread_color}; {delta_style}">{status}</div>
             </div>
             """, unsafe_allow_html=True)
         
         # 4. Velocity - ORANGE accent
-        with cols[3]:
-            velocity_color = Theme.get_velocity_color(features.velocity)
-            ratio = features.velocity / features.velocity_baseline if features.velocity_baseline > 0 else 1
-            status = "Spike!" if ratio > 2 else ("High" if ratio > 1.5 else "Normal")
+        with row1_cols[3]:
+            if is_loading:
+                velocity_display = "---"
+                velocity_color = "#a0aec0"
+                status = "Waiting..."
+            else:
+                velocity_display = f"{features.velocity:.1f}/s"
+                velocity_color = Theme.get_velocity_color(features.velocity)
+                ratio = features.velocity / features.velocity_baseline if features.velocity_baseline > 0 else 1
+                status = "Spike!" if ratio > 2 else ("High" if ratio > 1.5 else "Normal")
             
             st.markdown(f"""
             <div class="kpi-card" style="border-top: 3px solid #f97316; {card_style}">
                 <div style="color: #fb923c; {label_style}">⚡ VELOCITY</div>
-                <div style="color: {velocity_color}; {value_style}">{features.velocity:.1f}/s</div>
+                <div style="color: {velocity_color}; {value_style}">{velocity_display}</div>
                 <div style="color: {velocity_color}; {delta_style}">{status}</div>
             </div>
             """, unsafe_allow_html=True)
         
+        # Small spacing between rows
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+        
+        # ===================== ROW 2: Weighted Averages & Imbalance (4 KPIs) =====================
+        row2_cols = st.columns(4)
+        
         # 5. VWAP - CYAN accent
-        with cols[4]:
-            vwap_diff = features.price_vs_vwap
-            vwap_status = "Above" if vwap_diff > 0.1 else ("Below" if vwap_diff < -0.1 else "Fair")
-            vwap_color = "#ef4444" if vwap_diff > 0.1 else ("#10b981" if vwap_diff < -0.1 else "#06b6d4")
+        with row2_cols[0]:
+            if is_loading:
+                vwap_display = "---"
+                vwap_color = "#a0aec0"
+                vwap_status_display = "Waiting..."
+            else:
+                vwap_display = fmt_price(features.vwap)
+                vwap_diff = features.price_vs_vwap
+                vwap_status = "Above" if vwap_diff > 0.1 else ("Below" if vwap_diff < -0.1 else "Fair")
+                vwap_color = "#ef4444" if vwap_diff > 0.1 else ("#10b981" if vwap_diff < -0.1 else "#06b6d4")
+                vwap_status_display = f"{vwap_status} ({vwap_diff:+.1f}%)"
             
             st.markdown(f"""
             <div class="kpi-card" style="border-top: 3px solid #06b6d4; {card_style}">
                 <div style="color: #22d3ee; {label_style}">📌 VWAP</div>
-                <div style="color: #06b6d4; {value_style}">{fmt_price(features.vwap)}</div>
-                <div style="color: {vwap_color}; {delta_style}">{vwap_status} ({vwap_diff:+.1f}%)</div>
+                <div style="color: #06b6d4; {value_style}">{vwap_display}</div>
+                <div style="color: {vwap_color}; {delta_style}">{vwap_status_display}</div>
             </div>
             """, unsafe_allow_html=True)
         
-        # 6. Imbalance - PINK accent
-        with cols[5]:
-            imbalance_color = Theme.get_imbalance_color(features.imbalance)
-            imbalance_label = "BUY" if features.imbalance > 0.3 else ("SELL" if features.imbalance < -0.3 else ("Buy" if features.imbalance > 0 else "Sell"))
+        # 6. TWAP - TEAL accent (NEW)
+        with row2_cols[1]:
+            if is_loading:
+                twap_display = "---"
+                twap_color = "#a0aec0"
+                twap_status_display = "Waiting..."
+            else:
+                twap_display = fmt_price(features.twap)
+                twap_diff = features.price_vs_twap
+                twap_status = "Above" if twap_diff > 0.1 else ("Below" if twap_diff < -0.1 else "Fair")
+                twap_color = "#ef4444" if twap_diff > 0.1 else ("#10b981" if twap_diff < -0.1 else "#14b8a6")
+                twap_status_display = f"{twap_status} ({twap_diff:+.1f}%)"
+            
+            st.markdown(f"""
+            <div class="kpi-card" style="border-top: 3px solid #14b8a6; {card_style}">
+                <div style="color: #2dd4bf; {label_style}">⏱️ TWAP</div>
+                <div style="color: #14b8a6; {value_style}">{twap_display}</div>
+                <div style="color: {twap_color}; {delta_style}">{twap_status_display}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # 7. Imbalance - PINK accent
+        with row2_cols[2]:
+            if is_loading:
+                imbalance_display = "---"
+                imbalance_color = "#a0aec0"
+                imbalance_label = "Waiting..."
+            else:
+                imbalance_display = f"{features.imbalance_pct:+.1f}%"
+                imbalance_color = Theme.get_imbalance_color(features.imbalance)
+                imbalance_label = "BUY" if features.imbalance > 0.3 else ("SELL" if features.imbalance < -0.3 else ("Buy" if features.imbalance > 0 else "Sell"))
             
             st.markdown(f"""
             <div class="kpi-card" style="border-top: 3px solid #ec4899; {card_style}">
                 <div style="color: #f472b6; {label_style}">⚖️ IMBALANCE</div>
-                <div style="color: {imbalance_color}; {value_style}">{features.imbalance_pct:+.1f}%</div>
+                <div style="color: {imbalance_color}; {value_style}">{imbalance_display}</div>
                 <div style="color: {imbalance_color}; {delta_style}">{imbalance_label}</div>
             </div>
             """, unsafe_allow_html=True)
         
-        # Add spacing
+        # 8. Buy Pressure - INDIGO accent (NEW)
+        with row2_cols[3]:
+            if is_loading:
+                pressure_display = "---"
+                pressure_color = "#a0aec0"
+                pressure_label = "Waiting..."
+            else:
+                pressure_pct = features.buy_pressure * 100
+                pressure_color = "#10b981" if pressure_pct > 55 else ("#ef4444" if pressure_pct < 45 else "#6366f1")
+                pressure_label = "Buyers" if pressure_pct > 55 else ("Sellers" if pressure_pct < 45 else "Neutral")
+                pressure_display = f"{pressure_pct:.1f}%"
+            
+            st.markdown(f"""
+            <div class="kpi-card" style="border-top: 3px solid #6366f1; {card_style}">
+                <div style="color: #818cf8; {label_style}">🔥 BUY PRESSURE</div>
+                <div style="color: {pressure_color}; {value_style}">{pressure_display}</div>
+                <div style="color: {pressure_color}; {delta_style}">{pressure_label}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Add spacing after KPIs
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     
     # ==========================================================================
@@ -661,7 +764,7 @@ class Components:
         with st.sidebar:
             # Initialize navigation state
             if "current_page" not in st.session_state:
-                st.session_state.current_page = "Dashboard"
+                st.session_state.current_page = "Home"
             
             # Inject sidebar-specific CSS
             st.markdown("""
@@ -736,8 +839,8 @@ class Components:
                         -webkit-text-fill-color: transparent;
                         background-clip: text;
                         letter-spacing: 0.5px;
-                    ">HFT Dashboard</div>
-                    <div style="font-size: 10px; color: #64748b; margin-top: 4px; letter-spacing: 1px;">REAL-TIME TRADING</div>
+                    ">AlgoViz</div>
+                    <div style="font-size: 9px; color: #64748b; margin-top: 4px; letter-spacing: 0.5px;">SEE THE SIGNAL IN THE NOISE</div>
                 </div>
             """, unsafe_allow_html=True)
             
@@ -849,12 +952,14 @@ class Components:
             # Define navigation options based on mode
             if is_static_mode:
                 nav_items = [
+                    ("🏠 Home", "Home"),
                     ("📊 Dashboard", "Dashboard"),
                     ("📈 Analytics", "Analytics"),
                     ("⚙️ Settings", "Settings")
                 ]
             else:
                 nav_items = [
+                    ("🏠 Home", "Home"),
                     ("📊 Dashboard", "Dashboard"),
                     ("📡 Live Feed", "Live Feed"),
                     ("📈 Analytics", "Analytics"),
@@ -865,7 +970,7 @@ class Components:
             for label, page_name in nav_items:
                 is_active = st.session_state.current_page == page_name
                 btn_type = "primary" if is_active else "secondary"
-                if st.button(label, key=f"nav_{page_name}", use_container_width=True, type=btn_type):
+                if st.button(label, key=f"nav_{page_name}", width='stretch', type=btn_type):
                     st.session_state.current_page = page_name
                     st.rerun()
             
@@ -874,8 +979,8 @@ class Components:
             # Validate selected page exists in current mode
             valid_pages = [item[1] for item in nav_items]
             if selected_page not in valid_pages:
-                selected_page = "Dashboard"
-                st.session_state.current_page = "Dashboard"
+                selected_page = "Home"
+                st.session_state.current_page = "Home"
             
             st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
             
@@ -917,6 +1022,62 @@ class Components:
                 </div>
             """, unsafe_allow_html=True)
             
+            # ==========================================================
+            # 4. DOWNLOAD DATA (Only in Static/Demo Mode)
+            # ==========================================================
+            if is_static_mode:
+                st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+                
+                st.markdown("""
+                    <div style="
+                        font-size: 10px; 
+                        color: #8b5cf6; 
+                        font-weight: 600;
+                        letter-spacing: 1.5px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    ">
+                        <span style="font-size: 12px;">📥</span> DOWNLOAD DATA
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Get synthetic generator from session state
+                if 'synthetic_generator' in st.session_state and st.session_state.synthetic_generator:
+                    generator = st.session_state.synthetic_generator
+                    
+                    # Number of trades selector
+                    num_trades = st.selectbox(
+                        "Trades",
+                        options=[100, 500, 1000, 5000],
+                        index=2,
+                        label_visibility="collapsed"
+                    )
+                    
+                    # Generate CSV data
+                    csv_data = generator.get_csv_data(num_trades=num_trades, include_features=True)
+                    
+                    # Download button
+                    st.download_button(
+                        label="📥 Download CSV",
+                        data=csv_data,
+                        file_name=f"algoviz_synthetic_data_{num_trades}_trades.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+                    
+                    st.markdown("""
+                        <div style="
+                            font-size: 10px;
+                            color: #64748b;
+                            margin-top: 8px;
+                            text-align: center;
+                        ">
+                            Includes price, volume, VWAP, volatility & more
+                        </div>
+                    """, unsafe_allow_html=True)
+            
             return selected_page, data_mode, scenario
     
     @staticmethod
@@ -934,16 +1095,7 @@ class Components:
                 font-size: 12px;
                 color: var(--text-muted);
             ">
-                HFT Live Dashboard • Masters in Business Analytics • Data Visualization & Analytics
-            </div>
-            <div style="
-                font-family: 'Inter', sans-serif;
-                font-size: 11px;
-                color: var(--text-muted);
-                margin-top: 8px;
-                opacity: 0.7;
-            ">
-                Real-time market intelligence powered by Binance WebSocket API
+                Made with ❤️ by Kartik Joshi, Aditya Chitale & Krishna Patel
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1049,6 +1201,153 @@ class Components:
 <div style="background: rgba(20, 25, 35, 0.6); padding: 10px; border-radius: 8px;"><div style="font-size: 10px; color: #a0aec0; text-transform: uppercase;">Reversal Risk</div><div style="font-size: 13px; color: {reversal_color}; font-weight: 600;">{reversal_pct:.0f}%</div></div>
 </div>
 <div style="background: rgba(20, 25, 35, 0.6); padding: 10px; border-radius: 8px;"><div style="font-size: 10px; color: #a0aec0; text-transform: uppercase; margin-bottom: 8px;">Top Contributing Factors</div>{features_html}</div>
+</div>"""
+        
+        st.markdown(html_content, unsafe_allow_html=True)
+    
+    # ==========================================================================
+    # DEEP LEARNING PREDICTION PANEL (NEW)
+    # ==========================================================================
+    
+    @staticmethod
+    def render_deep_learning_panel(prediction):
+        """
+        Render the Deep Learning Neural Network prediction panel.
+        
+        Args:
+            prediction: DeepPredictionResult from deep learning predictor
+        """
+        if prediction is None:
+            st.markdown("""
+            <div class="dl-panel" style="background: linear-gradient(135deg, rgba(20, 25, 35, 0.95), rgba(88, 28, 135, 0.2)); 
+                 border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 16px; padding: 20px;">
+                <div style="text-align: center; color: #a0aec0;">
+                    <span style="font-size: 24px;">🧠</span><br>
+                    <span>Neural Network Initializing...</span><br>
+                    <span style="font-size: 10px; color: #8b5cf6;">LSTM + Attention layers loading...</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            return
+        
+        # Direction styling with neural network theme
+        direction_styles = {
+            "strong_up": ("🚀 STRONG BUY", "#10b981", "linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(88, 28, 135, 0.15))"),
+            "up": ("📈 BUY", "#22c55e", "linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(88, 28, 135, 0.1))"),
+            "neutral": ("➡️ HOLD", "#a78bfa", "linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(88, 28, 135, 0.1))"),
+            "down": ("📉 SELL", "#f97316", "linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(88, 28, 135, 0.1))"),
+            "strong_down": ("🔻 STRONG SELL", "#ef4444", "linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(88, 28, 135, 0.15))")
+        }
+        
+        direction_key = prediction.direction.value if hasattr(prediction.direction, 'value') else str(prediction.direction)
+        direction_text, direction_color, direction_bg = direction_styles.get(
+            direction_key, ("➡️ ANALYZING", "#a78bfa", "linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(88, 28, 135, 0.1))")
+        )
+        
+        # Regime styling
+        regime_styles = {
+            "trending_up": ("📈 Trending Up", "#10b981"),
+            "trending_down": ("📉 Trending Down", "#ef4444"),
+            "ranging": ("↔️ Ranging", "#a78bfa"),
+            "volatile": ("⚡ Volatile", "#f59e0b"),
+            "breakout": ("🚀 Breakout", "#8b5cf6")
+        }
+        
+        regime_key = prediction.regime.value if hasattr(prediction.regime, 'value') else str(prediction.regime)
+        regime_text, regime_color = regime_styles.get(regime_key, ("❓ Analyzing", "#a78bfa"))
+        
+        # Probability bar values
+        up_pct = prediction.up_probability * 100
+        down_pct = prediction.down_probability * 100
+        neutral_pct = prediction.neutral_probability * 100
+        
+        # Momentum styling
+        momentum = prediction.momentum_score
+        if momentum > 30:
+            momentum_color = "#10b981"
+        elif momentum > 0:
+            momentum_color = "#22c55e"
+        elif momentum > -30:
+            momentum_color = "#f97316"
+        else:
+            momentum_color = "#ef4444"
+        
+        # Pre-compute values
+        accuracy_color = '#10b981' if prediction.model_accuracy > 55 else '#f59e0b'
+        uncertainty_color = '#10b981' if prediction.prediction_uncertainty < 30 else '#f59e0b' if prediction.prediction_uncertainty < 50 else '#ef4444'
+        confidence_pct = prediction.direction_confidence * 100
+        momentum_left = 50 + momentum/2
+        
+        # Feature importance (top 4)
+        top_features = sorted(prediction.feature_importance.items(), key=lambda x: x[1], reverse=True)[:4] if prediction.feature_importance else []
+        
+        features_html = ""
+        for feat_name, feat_val in top_features:
+            bar_width = min(feat_val, 100)
+            features_html += f"""<div style="margin-bottom: 6px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                    <span style="color: #a0aec0; font-size: 10px;">{feat_name}</span>
+                    <span style="color: #a78bfa; font-size: 10px; font-family: monospace;">{feat_val:.1f}%</span>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.8); height: 4px; border-radius: 2px;">
+                    <div style="width: {bar_width}%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #a78bfa); border-radius: 2px;"></div>
+                </div>
+            </div>"""
+        
+        # Attention visualization (simplified)
+        attention_html = ""
+        if prediction.attention_weights and len(prediction.attention_weights) > 0:
+            # Show last 10 attention weights as bars
+            weights = prediction.attention_weights[-10:] if len(prediction.attention_weights) > 10 else prediction.attention_weights
+            max_weight = max(weights) if weights else 1
+            for i, w in enumerate(weights):
+                height = int(w / max_weight * 24)
+                opacity = 0.4 + (w / max_weight) * 0.6
+                attention_html += f"""<div style="width: 6px; height: {height}px; background: rgba(139, 92, 246, {opacity}); border-radius: 2px; margin: 0 1px;"></div>"""
+        
+        # Layer activations
+        layer_html = ""
+        if prediction.layer_activations:
+            for layer_name, activation in list(prediction.layer_activations.items())[:3]:
+                layer_width = min(activation * 100, 100)
+                layer_html += f"""<div style="display: flex; align-items: center; margin-bottom: 4px;">
+                    <span style="color: #718096; font-size: 9px; width: 70px;">{layer_name}</span>
+                    <div style="flex: 1; background: rgba(30, 41, 59, 0.8); height: 4px; border-radius: 2px; margin-left: 8px;">
+                        <div style="width: {layer_width}%; height: 100%; background: #a78bfa; border-radius: 2px;"></div>
+                    </div>
+                </div>"""
+        
+        html_content = f"""<div style="background: {direction_bg}; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 16px; padding: 20px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(168, 85, 247, 0.2); padding-bottom: 12px;">
+<div><span style="font-size: 10px; color: #a78bfa; text-transform: uppercase; letter-spacing: 1px;">🧠 DEEP LEARNING</span><div style="font-size: 11px; color: #718096; margin-top: 2px;">{prediction.model_type} • {prediction.total_parameters:,} params</div></div>
+<div style="text-align: right;"><div style="font-size: 10px; color: #a0aec0;">Hist. Accuracy</div><div style="font-size: 14px; color: {accuracy_color}; font-family: monospace;">{prediction.model_accuracy:.1f}%</div></div>
+</div>
+<div style="text-align: center; margin-bottom: 16px;">
+<div style="font-size: 24px; font-weight: 700; color: {direction_color};">{direction_text}</div>
+<div style="font-size: 32px; font-weight: 700; color: {direction_color}; font-family: monospace;">{confidence_pct:.0f}%</div>
+<div style="font-size: 11px; color: #a0aec0;">Neural Network Confidence</div>
+</div>
+<div style="margin-bottom: 16px; background: rgba(20, 25, 35, 0.6); padding: 12px; border-radius: 8px;">
+<div style="font-size: 10px; color: #a0aec0; text-transform: uppercase; margin-bottom: 8px;">Output Probabilities</div>
+<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span style="color: #10b981; font-size: 10px;">↑ UP</span><span style="color: #a78bfa; font-size: 10px;">→ HOLD</span><span style="color: #ef4444; font-size: 10px;">↓ DOWN</span></div>
+<div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {up_pct}%; background: linear-gradient(90deg, #10b981, #22c55e);"></div><div style="width: {neutral_pct}%; background: #a78bfa;"></div><div style="width: {down_pct}%; background: linear-gradient(90deg, #f97316, #ef4444);"></div></div>
+<div style="display: flex; justify-content: space-between; margin-top: 4px;"><span style="color: #10b981; font-size: 11px; font-family: monospace;">{up_pct:.1f}%</span><span style="color: #a78bfa; font-size: 11px; font-family: monospace;">{neutral_pct:.1f}%</span><span style="color: #ef4444; font-size: 11px; font-family: monospace;">{down_pct:.1f}%</span></div>
+</div>
+<div style="margin-bottom: 16px;">
+<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span style="color: #ef4444; font-size: 10px;">Bearish</span><span style="color: #a0aec0; font-size: 10px;">LSTM Momentum</span><span style="color: #10b981; font-size: 10px;">Bullish</span></div>
+<div style="background: rgba(30, 41, 59, 0.8); height: 8px; border-radius: 4px; position: relative;"><div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.3);"></div><div style="position: absolute; left: {momentum_left}%; top: -2px; width: 12px; height: 12px; background: {momentum_color}; border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 8px {momentum_color};"></div></div>
+<div style="text-align: center; margin-top: 4px;"><span style="color: {momentum_color}; font-size: 14px; font-family: monospace;">{momentum:+.0f}</span></div>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+<div style="background: rgba(20, 25, 35, 0.6); padding: 8px; border-radius: 8px; text-align: center;"><div style="font-size: 9px; color: #a0aec0; text-transform: uppercase;">Regime</div><div style="font-size: 11px; color: {regime_color}; font-weight: 600;">{regime_text}</div></div>
+<div style="background: rgba(20, 25, 35, 0.6); padding: 8px; border-radius: 8px; text-align: center;"><div style="font-size: 9px; color: #a0aec0; text-transform: uppercase;">Uncertainty</div><div style="font-size: 11px; color: {uncertainty_color}; font-weight: 600;">{prediction.prediction_uncertainty:.0f}%</div></div>
+<div style="background: rgba(20, 25, 35, 0.6); padding: 8px; border-radius: 8px; text-align: center;"><div style="font-size: 9px; color: #a0aec0; text-transform: uppercase;">Pred. Move</div><div style="font-size: 11px; color: {'#10b981' if prediction.predicted_move_bps > 0 else '#ef4444'}; font-weight: 600;">{prediction.predicted_move_bps:+.1f} bps</div></div>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+<div style="background: rgba(20, 25, 35, 0.6); padding: 10px; border-radius: 8px;"><div style="font-size: 9px; color: #a78bfa; text-transform: uppercase; margin-bottom: 8px;">🎯 Feature Importance</div>{features_html}</div>
+<div style="background: rgba(20, 25, 35, 0.6); padding: 10px; border-radius: 8px;"><div style="font-size: 9px; color: #a78bfa; text-transform: uppercase; margin-bottom: 8px;">👁️ Attention Weights</div><div style="display: flex; align-items: flex-end; justify-content: center; height: 28px; margin-bottom: 8px;">{attention_html}</div><div style="font-size: 9px; color: #a78bfa; text-transform: uppercase; margin-bottom: 4px; margin-top: 8px;">📊 Layer Activations</div>{layer_html}</div>
+</div>
+<div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(168, 85, 247, 0.2); display: flex; justify-content: space-between;"><span style="font-size: 9px; color: #718096;">Inference: {prediction.inference_time_ms:.1f}ms</span><span style="font-size: 9px; color: #718096;">Horizon: {prediction.prediction_horizon_seconds}s</span><span style="font-size: 9px; color: #718096;">Layers: {prediction.hidden_layers}</span></div>
 </div>"""
         
         st.markdown(html_content, unsafe_allow_html=True)
@@ -1163,49 +1462,71 @@ class Components:
     @staticmethod
     def render_correlation_panel(correlations: dict):
         """
-        Render correlation matrix as a styled table.
+        Render correlation matrix as a styled, easy-to-read panel.
         
         Args:
             correlations: Dict with metric pairs and correlation values
         """
         st.markdown("""
         <div style="background: linear-gradient(135deg, rgba(20, 25, 35, 0.95), rgba(30, 25, 45, 0.95)); 
-             border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; padding: 20px;">
-            <div style="font-size: 14px; color: #fafafa; font-weight: 600; margin-bottom: 16px;">
-                📊 Metric Correlations
+             border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; padding: 28px;">
+            <div style="font-size: 20px; color: #fafafa; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 24px;">📊</span> Feature Correlations
             </div>
         """, unsafe_allow_html=True)
         
         if not correlations:
             st.markdown("""
-                <div style="text-align: center; padding: 20px; color: #6b7280;">
-                    Calculating correlations...
+                <div style="text-align: center; padding: 40px; color: #6b7280; font-size: 16px;">
+                    ⏳ Calculating correlations...
                 </div>
             """, unsafe_allow_html=True)
         else:
-            for (metric1, metric2), corr in list(correlations.items())[:6]:
+            for (metric1, metric2), corr in list(correlations.items()):
                 # Color based on correlation strength
                 if abs(corr) > 0.7:
-                    corr_color = "#8b5cf6"
+                    corr_color = "#a78bfa"
+                    strength_label = "Strong"
+                    strength_bg = "rgba(139, 92, 246, 0.2)"
                 elif abs(corr) > 0.4:
-                    corr_color = "#3b82f6"
+                    corr_color = "#60a5fa"
+                    strength_label = "Moderate"
+                    strength_bg = "rgba(59, 130, 246, 0.2)"
                 else:
-                    corr_color = "#6b7280"
+                    corr_color = "#94a3b8"
+                    strength_label = "Weak"
+                    strength_bg = "rgba(148, 163, 184, 0.1)"
                 
-                bar_width = abs(corr) * 50
+                bar_width = abs(corr) * 100
                 bar_color = "#10b981" if corr > 0 else "#ef4444"
+                direction = "Positive" if corr > 0 else "Negative"
+                direction_icon = "📈" if corr > 0 else "📉"
                 
                 st.markdown(f"""
-                <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                    <div style="flex: 1; font-size: 11px; color: #a0aec0;">{metric1} ↔ {metric2}</div>
-                    <div style="width: 60px; text-align: center;">
-                        <div style="background: rgba(30, 41, 59, 0.8); height: 6px; border-radius: 3px; position: relative;">
-                            <div style="position: absolute; left: 50%; width: {bar_width}%; height: 100%; background: {bar_color}; 
-                                 border-radius: 3px; transform: translateX({'0' if corr > 0 else '-100'}%);"></div>
+                <div style="background: {strength_bg}; border: 1px solid rgba(255,255,255,0.08); 
+                            border-radius: 12px; padding: 16px 20px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 16px;">{direction_icon}</span>
+                            <span style="font-size: 15px; color: #fafafa; font-weight: 600;">{metric1}</span>
+                            <span style="color: #64748b; font-size: 14px;">↔</span>
+                            <span style="font-size: 15px; color: #fafafa; font-weight: 600;">{metric2}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">{strength_label}</span>
+                            <span style="font-size: 20px; font-weight: 700; color: {corr_color}; font-family: 'JetBrains Mono', monospace;">
+                                {corr:+.2f}
+                            </span>
                         </div>
                     </div>
-                    <div style="width: 50px; text-align: right; font-size: 12px; color: {corr_color}; font-family: 'JetBrains Mono';">
-                        {corr:+.2f}
+                    <div style="background: rgba(30, 41, 59, 0.6); height: 10px; border-radius: 5px; overflow: hidden;">
+                        <div style="width: {bar_width}%; height: 100%; background: linear-gradient(90deg, {bar_color}, {bar_color}aa); 
+                                    border-radius: 5px; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                        <span style="font-size: 13px; color: #94a3b8;">0%</span>
+                        <span style="font-size: 14px; color: {bar_color}; font-weight: 500;">{direction} correlation: {abs(corr)*100:.0f}%</span>
+                        <span style="font-size: 13px; color: #94a3b8;">100%</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)

@@ -1,5 +1,5 @@
 """
-HFT Live Dashboard - Helper Utilities
+AlgoViz Dashboard - Helper Utilities
 =======================================
 
 Common utility functions used across the dashboard.
@@ -215,7 +215,7 @@ def setup_logging(level: str = "INFO") -> logging.Logger:
         datefmt="%Y-%m-%d %H:%M:%S"
     )
     
-    return logging.getLogger("hft-dashboard")
+    return logging.getLogger("algoviz-dashboard")
 
 
 # =============================================================================

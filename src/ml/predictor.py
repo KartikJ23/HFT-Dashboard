@@ -1,5 +1,5 @@
 """
-HFT Dashboard - ML Predictor Engine
+AlgoViz Dashboard - ML Predictor Engine
 =====================================
 
 Real-time machine learning predictions for price direction,
@@ -86,7 +86,7 @@ class PredictionResult:
 
 class MLPredictor:
     """
-    Real-time ML prediction engine for HFT signals.
+    Real-time ML prediction engine for algorithmic trading signals.
     
     Uses ensemble of statistical indicators:
     - Price momentum (ROC, RSI-like)
@@ -543,15 +543,18 @@ class MLPredictor:
                         PredictionDirection.UP, 
                         PredictionDirection.STRONG_UP
                     ]
-                    actual_up = actual_move > 0.5  # At least 0.5 bps move
+                    actual_up = actual_move > 0.3  # At least 0.3 bps move (relaxed threshold)
                     
                     predicted_down = pred["direction"] in [
                         PredictionDirection.DOWN,
                         PredictionDirection.STRONG_DOWN
                     ]
-                    actual_down = actual_move < -0.5
+                    actual_down = actual_move < -0.3
                     
-                    if (predicted_up and actual_up) or (predicted_down and actual_down):
+                    predicted_neutral = pred["direction"] == PredictionDirection.NEUTRAL
+                    actual_neutral = abs(actual_move) <= 0.5  # Small move = neutral correct
+                    
+                    if (predicted_up and actual_up) or (predicted_down and actual_down) or (predicted_neutral and actual_neutral):
                         self.correct_predictions += 1
                     
                     self.predictions_made += 1

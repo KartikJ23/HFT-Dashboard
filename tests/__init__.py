@@ -1,1 +1,1 @@
-# HFT Live Dashboard - Tests Package
+# AlgoViz Dashboard - Tests Package

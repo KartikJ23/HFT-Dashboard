@@ -1,4 +1,4 @@
-# HFT Live Dashboard - Utils Package
+# AlgoViz Dashboard - Utils Package
 # Contains helper functions
 
 from .helpers import Helpers

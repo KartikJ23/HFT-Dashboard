@@ -1,6 +1,6 @@
-# 📈 HFT Live Visualization & Decisioning Dashboard
+# 📈 AlgoViz - See the Signal in the Noise
 
-A **professional-grade**, real-time High-Frequency Trading (HFT) dashboard that streams live BTC/USDT market data from Binance and provides actionable trading intelligence.
+A **professional-grade**, real-time algorithmic trading analytics dashboard that streams live BTC/USDT market data from Binance and provides actionable trading intelligence.
 
 <div align="center">
 
@@ -10,7 +10,7 @@ A **professional-grade**, real-time High-Frequency Trading (HFT) dashboard that 
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-**Masters in Business Analytics • Data Visualization & Analytics**
+**See the Signal in the Noise**
 
 </div>
 
@@ -107,7 +107,7 @@ docker-compose down
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  📈 HFT TRADING DASHBOARD           [🟢 LIVE TRADING]            │
+│  📈 ALGOVIZ - SEE THE SIGNAL           [🟢 LIVE TRADING]            │
 ├──────────────────────────────────────────────────────────────────┤
 │  🟢 Connected to Binance Exchange    Last Update: 10:30:45.123   │
 ├──────────────────────────────────────────────────────────────────┤
@@ -200,7 +200,7 @@ hft-dashboard/
 
 ## 🎓 Academic Context
 
-This project was developed for the **Data Visualization & Analytics** course as part of the **Masters in Business Analytics** program.
+This project was developed for the **Data Visualization & Analytics** course.
 
 ### Learning Objectives Demonstrated
 
@@ -244,14 +244,14 @@ docker exec hft-live-dashboard pytest tests/ -v
 
 ## 📝 License
 
-This project is developed for educational purposes as part of the Masters in Business Analytics program.
+This project is developed for educational purposes.
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for HFT Analytics**
+**AlgoViz** — *See the Signal in the Noise*
 
-*Real-time market intelligence • Professional trading dashboard*
+Built with ❤️ by Kartik Joshi, Aditya Chitale & Krishna Patel
 
 </div>

@@ -1,5 +1,5 @@
 """
-HFT Dashboard - Alert Manager
+AlgoViz Dashboard - Alert Manager
 ==============================
 
 Comprehensive alert system with custom thresholds, priority levels,
@@ -145,7 +145,7 @@ class AlertManager:
         self._create_default_rules()
     
     def _create_default_rules(self):
-        """Create default alert rules for common HFT scenarios."""
+        """Create default alert rules for common algorithmic trading scenarios."""
         default_rules = [
             AlertRule(
                 id="price_high",

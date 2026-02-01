@@ -1,5 +1,5 @@
 """
-HFT Dashboard - Strategy Backtester
+AlgoViz Dashboard - Strategy Backtester
 =====================================
 
 Rule-based backtesting engine with P&L simulation,
@@ -127,7 +127,7 @@ class StrategyRule:
 
 class StrategyBacktester:
     """
-    Backtesting engine for HFT trading strategies.
+    Backtesting engine for algorithmic trading strategies.
     
     Tests trading rules against historical price data
     and calculates comprehensive performance metrics.
@@ -323,18 +323,18 @@ class StrategyBacktester:
                 direction = TradeDirection.LONG
                 
                 if "Momentum" in strategy_name:
-                    # More lenient entry: momentum exceeds 50% of volatility
-                    entry_signal = abs(momentum) > volatility * 0.5 and momentum != 0
+                    # More lenient entry: momentum exceeds 30% of volatility
+                    entry_signal = abs(momentum) > volatility * 0.3 and momentum != 0
                     direction = TradeDirection.LONG if momentum > 0 else TradeDirection.SHORT
                 elif "Mean Reversion" in strategy_name:
                     # Enter when price moved significantly
-                    entry_signal = abs(momentum) > volatility * 1.0
+                    entry_signal = abs(momentum) > volatility * 0.5
                     direction = TradeDirection.SHORT if momentum > 0 else TradeDirection.LONG
                 elif "Volatility" in strategy_name:
-                    entry_signal = volatility > 0.0005 and abs(momentum) > volatility * 0.3
+                    entry_signal = volatility > 0.0002 and abs(momentum) > volatility * 0.2
                     direction = TradeDirection.LONG if momentum > 0 else TradeDirection.SHORT
                 else:  # Spread Fade
-                    entry_signal = i % 15 == 0  # Enter periodically for demo
+                    entry_signal = i % 10 == 0  # Enter more frequently for demo
                     direction = TradeDirection.LONG
                 
                 if entry_signal:
@@ -351,13 +351,17 @@ class StrategyBacktester:
                 else:
                     pnl_pct = (position_entry_price - price) / position_entry_price * 100
                 
-                # Exit conditions
-                if pnl_pct <= -0.5:  # Stop loss at 0.5%
+                # Exit conditions - more lenient for faster trade turnover
+                if pnl_pct <= -0.2:  # Stop loss at 0.2%
                     exit_signal = True
-                elif pnl_pct >= 0.3:  # Take profit at 0.3%
+                elif pnl_pct >= 0.15:  # Take profit at 0.15%
                     exit_signal = True
-                elif i > lookback + 10 and ((position == TradeDirection.LONG and momentum < 0) or
+                elif i > lookback + 5 and ((position == TradeDirection.LONG and momentum < 0) or
                                             (position == TradeDirection.SHORT and momentum > 0)):
+                    exit_signal = True
+                # Also exit if held for too many bars
+                elif i > lookback + 20:
+                    exit_signal = True
                     exit_signal = True
                 
                 if exit_signal:

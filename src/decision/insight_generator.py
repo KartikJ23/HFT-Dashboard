@@ -1,5 +1,5 @@
 """
-HFT Live Dashboard - Insight Generator
+AlgoViz Dashboard - Insight Generator
 ========================================
 
 Transforms triggered rules into formatted insights for display.

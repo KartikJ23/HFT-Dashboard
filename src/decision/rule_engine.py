@@ -1,5 +1,5 @@
 """
-HFT Live Dashboard - Rule Engine
+AlgoViz Dashboard - Rule Engine
 =================================
 
 Evaluates trading rules against current market features.

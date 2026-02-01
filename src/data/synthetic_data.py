@@ -1,5 +1,5 @@
 """
-HFT Dashboard - Synthetic Data Generator
+AlgoViz Dashboard - Synthetic Data Generator
 ==========================================
 
 Generates realistic synthetic trading data for demonstration and testing.
@@ -355,6 +355,143 @@ class SyntheticDataGenerator:
             "best_bid": depth.best_bid,
             "best_ask": depth.best_ask,
         }
+    
+    def to_binance_format(self, trades: Optional[List[SyntheticTrade]] = None) -> List[dict]:
+        """
+        Convert synthetic trades to exact Binance WebSocket trade stream format.
+        This makes synthetic data indistinguishable from real Binance data.
+        
+        Binance trade stream format:
+        {
+            "e": "trade",        // Event type
+            "E": 1672515782136,  // Event time (ms)
+            "s": "BTCUSDT",      // Symbol
+            "t": 12345,          // Trade ID
+            "p": "87500.00",     // Price (string)
+            "q": "0.001",        // Quantity (string)
+            "T": 1672515782136,  // Trade time (ms)
+            "m": true            // Is buyer maker
+        }
+        """
+        if trades is None:
+            trades = self._trade_history[-100:] if self._trade_history else self.generate_trades(100)
+        
+        binance_trades = []
+        for trade in trades:
+            # Convert timestamp to milliseconds
+            event_time = int(trade.timestamp.timestamp() * 1000)
+            
+            binance_trades.append({
+                "e": "trade",
+                "E": event_time,
+                "s": "BTCUSDT",
+                "t": trade.trade_id,
+                "p": f"{trade.price:.2f}",
+                "q": f"{trade.quantity:.5f}",
+                "T": event_time,
+                "m": trade.is_buyer_maker
+            })
+        
+        return binance_trades
+    
+    def to_dataframe(self, num_trades: int = 1000, include_features: bool = True) -> 'pd.DataFrame':
+        """
+        Export synthetic data as a pandas DataFrame.
+        
+        Args:
+            num_trades: Number of trades to generate
+            include_features: Whether to include calculated features
+            
+        Returns:
+            DataFrame with trade data and optional features
+        """
+        import pandas as pd
+        
+        # Generate trades if needed
+        while len(self._trade_history) < num_trades:
+            self.generate_trade()
+        
+        trades = self._trade_history[-num_trades:]
+        
+        # Base trade data
+        data = {
+            'timestamp': [t.timestamp for t in trades],
+            'trade_id': [t.trade_id for t in trades],
+            'price': [t.price for t in trades],
+            'quantity': [t.quantity for t in trades],
+            'is_buyer_maker': [t.is_buyer_maker for t in trades],
+        }
+        
+        df = pd.DataFrame(data)
+        
+        if include_features:
+            # Add derived features
+            prices = df['price'].values
+            quantities = df['quantity'].values
+            
+            # Rolling VWAP (20-period)
+            df['vwap_20'] = (
+                (df['price'] * df['quantity']).rolling(20).sum() /
+                df['quantity'].rolling(20).sum()
+            )
+            
+            # Returns
+            df['return_pct'] = df['price'].pct_change() * 100
+            
+            # Rolling volatility (20-period)
+            df['volatility_20'] = df['return_pct'].rolling(20).std()
+            
+            # Price momentum (5-period)
+            df['momentum_5'] = df['price'].diff(5)
+            
+            # Volume-weighted direction
+            df['buy_volume'] = df.apply(
+                lambda x: x['quantity'] if not x['is_buyer_maker'] else 0, axis=1
+            )
+            df['sell_volume'] = df.apply(
+                lambda x: x['quantity'] if x['is_buyer_maker'] else 0, axis=1
+            )
+            
+            # Order flow imbalance (rolling)
+            df['order_flow_imbalance'] = (
+                (df['buy_volume'].rolling(20).sum() - df['sell_volume'].rolling(20).sum()) /
+                (df['buy_volume'].rolling(20).sum() + df['sell_volume'].rolling(20).sum() + 1e-10)
+            )
+            
+            # Fill NaN values from rolling calculations
+            df = df.ffill().bfill()
+        
+        return df
+    
+    def to_csv(self, filepath: str, num_trades: int = 1000, include_features: bool = True) -> str:
+        """
+        Export synthetic data to CSV file.
+        
+        Args:
+            filepath: Path to save CSV file
+            num_trades: Number of trades to export
+            include_features: Whether to include calculated features
+            
+        Returns:
+            Path to saved file
+        """
+        df = self.to_dataframe(num_trades=num_trades, include_features=include_features)
+        df.to_csv(filepath, index=False)
+        return filepath
+    
+    def get_csv_data(self, num_trades: int = 1000, include_features: bool = True) -> str:
+        """
+        Get synthetic data as CSV string (for download).
+        
+        Args:
+            num_trades: Number of trades to include
+            include_features: Whether to include calculated features
+            
+        Returns:
+            CSV string
+        """
+        df = self.to_dataframe(num_trades=num_trades, include_features=include_features)
+        return df.to_csv(index=False)
 
 
 # Singleton instance for consistent data across the app

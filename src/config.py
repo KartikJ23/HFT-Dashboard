@@ -1,5 +1,5 @@
 """
-HFT Live Dashboard - Configuration Module
+AlgoViz Dashboard - Configuration Module
 ==========================================
 
 All constants, thresholds, and settings for the dashboard.
@@ -204,6 +204,13 @@ class ChartConfig:
 # Global chart config instance
 CHART_CONFIG = ChartConfig()
 
+# Plotly modebar configuration - show on hover with all useful options
+PLOTLY_CONFIG = {
+    "displayModeBar": True,
+    "displaylogo": False,
+    "modeBarButtonsToRemove": ["lasso2d", "select2d"]
+}
+
 
 # =============================================================================
 # INSIGHT CONFIGURATION
@@ -337,7 +344,7 @@ RULES = [
 # =============================================================================
 
 PAGE_CONFIG = {
-    "page_title": "HFT Live Dashboard",
+    "page_title": "AlgoViz",
     "page_icon": "📈",
     "layout": "wide",
     "initial_sidebar_state": "expanded"

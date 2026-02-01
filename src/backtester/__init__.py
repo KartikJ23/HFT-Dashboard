@@ -1,5 +1,5 @@
 """
-HFT Dashboard - Strategy Backtester Module
+AlgoViz Dashboard - Strategy Backtester Module
 ============================================
 
 Rule-based backtesting with P&L simulation and risk metrics.

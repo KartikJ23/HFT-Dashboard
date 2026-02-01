@@ -1,8 +1,8 @@
 """
-HFT Dashboard - Machine Learning Module
+AlgoViz Dashboard - Machine Learning Module
 ========================================
 
-Real-time ML predictions for HFT trading signals.
+Real-time ML predictions for algorithmic trading signals.
 """
 
 from .predictor import MLPredictor, PredictionResult

@@ -1,4 +1,4 @@
-# Docker ignore file for HFT Dashboard
+# Docker ignore file for AlgoViz Dashboard
 
 # Git
 .git

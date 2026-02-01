@@ -1,4 +1,4 @@
-# HFT Live Dashboard - Docker Configuration
+# AlgoViz - Docker Configuration
 # Base image: Python 3.11 slim for minimal footprint
 
 FROM python:3.11-slim

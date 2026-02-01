@@ -1,5 +1,5 @@
 """
-HFT Live Dashboard - WebSocket Handler
+AlgoViz Dashboard - WebSocket Handler
 =======================================
 
 Manages WebSocket connections to Binance for real-time trade and depth data.
@@ -263,7 +263,9 @@ class BinanceWebSocketHandler:
         """Process a trade message."""
         try:
             # Parse trade data
-            timestamp = datetime.utcfromtimestamp(data["T"] / 1000.0)
+            # Use local UTC time for consistency with velocity calculations
+            # Binance timestamp (data["T"]) can differ from local time
+            timestamp = datetime.utcnow()
             price = float(data["p"])
             quantity = float(data["q"])
             is_buyer_maker = data["m"]  # True = sell, False = buy
@@ -280,6 +282,12 @@ class BinanceWebSocketHandler:
             
             self._trade_count += 1
             
+            # Log first trade and every 1000th trade after (reduced logging)
+            if self._trade_count == 1:
+                logger.info(f"First trade received! price={price}, qty={quantity}")
+            elif self._trade_count % 1000 == 0:
+                logger.info(f"Trade #{self._trade_count}: price={price}")
+            
         except (KeyError, ValueError) as e:
             logger.error(f"Error parsing trade: {e}")
             self._error_count += 1
@@ -291,6 +299,10 @@ class BinanceWebSocketHandler:
             timestamp = datetime.utcnow()
             bids = data.get("bids", [])
             asks = data.get("asks", [])
+            
+            # Log first depth and every 1000th (reduced logging)
+            if self._depth_count == 0:
+                logger.info(f"First depth received: {len(bids)} bids, {len(asks)} asks")
             
             # Store in state manager
             self.state_manager.add_depth_raw(

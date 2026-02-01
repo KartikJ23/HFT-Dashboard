@@ -1,5 +1,5 @@
 """
-HFT Dashboard - Alert System Module
+AlgoViz Dashboard - Alert System Module
 =====================================
 
 Custom alert system with visual notifications and history tracking.

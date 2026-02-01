@@ -1,5 +1,5 @@
 """
-HFT Live Dashboard - Unit Tests
+AlgoViz Dashboard - Unit Tests
 ================================
 
 Tests for feature calculations and rule engine.

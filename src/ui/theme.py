@@ -1,5 +1,5 @@
 """
-HFT Live Dashboard - Professional Theme Configuration
+AlgoViz - Professional Theme Configuration
 =======================================================
 
 Premium dark theme styling for Streamlit and Plotly charts.
@@ -15,7 +15,7 @@ from config import COLORS, CHART_CONFIG
 
 class Theme:
     """
-    Professional Theme configuration for the HFT Dashboard.
+    Professional Theme configuration for the AlgoViz Dashboard.
     
     Features:
     - Glassmorphism design
@@ -68,18 +68,19 @@ class Theme:
     STATUS_DISCONNECTED = RED
     
     # ==========================================================================
-    # PLOTLY LAYOUT TEMPLATES
+    # PLOTLY LAYOUT TEMPLATES (ENHANCED FOR BIG SCREEN VISIBILITY)
     # ==========================================================================
     
     @classmethod
     def get_base_layout(cls, title: str = "", height: int = None) -> dict:
-        """Get premium Plotly layout with glassmorphism and smooth transitions."""
+        """Get premium Plotly layout with glassmorphism and smooth transitions.
+        Enhanced for big screen visibility with larger fonts and higher contrast."""
         return {
             "title": {
                 "text": f"<b>{title}</b>" if title else "",
                 "font": {
                     "family": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-                    "size": 14,
+                    "size": 16,
                     "color": cls.TEXT_PRIMARY
                 },
                 "x": 0.02,
@@ -88,42 +89,43 @@ class Theme:
                 "yanchor": "top"
             },
             "paper_bgcolor": "rgba(0,0,0,0)",
-            "plot_bgcolor": "rgba(20, 25, 35, 0.6)",
+            "plot_bgcolor": "rgba(20, 25, 35, 0.7)",
             "font": {
                 "family": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
                 "color": cls.TEXT_PRIMARY,
-                "size": 11
+                "size": 12
             },
             "height": height or 300,
-            "margin": dict(l=50, r=30, t=40, b=35),
+            "margin": dict(l=55, r=35, t=55, b=40),
             "xaxis": {
-                "gridcolor": "rgba(255,255,255,0.05)",
-                "tickfont": {"color": cls.TEXT_SECONDARY, "size": 10},
+                "gridcolor": "rgba(255,255,255,0.08)",
+                "tickfont": {"color": cls.TEXT_PRIMARY, "size": 11},
                 "showgrid": True,
                 "zeroline": False,
                 "showline": True,
-                "linecolor": "rgba(255,255,255,0.1)",
+                "linecolor": "rgba(255,255,255,0.15)",
                 "linewidth": 1
             },
             "yaxis": {
-                "gridcolor": "rgba(255,255,255,0.05)",
-                "tickfont": {"color": cls.TEXT_SECONDARY, "size": 10},
+                "gridcolor": "rgba(255,255,255,0.08)",
+                "tickfont": {"color": cls.TEXT_PRIMARY, "size": 11},
                 "showgrid": True,
                 "zeroline": False,
                 "showline": True,
-                "linecolor": "rgba(255,255,255,0.1)",
+                "linecolor": "rgba(255,255,255,0.15)",
                 "linewidth": 1
             },
             "showlegend": True,
             "legend": {
-                "font": {"color": cls.TEXT_SECONDARY, "size": 10},
-                "bgcolor": "rgba(0,0,0,0)",
-                "borderwidth": 0
+                "font": {"color": cls.TEXT_PRIMARY, "size": 11},
+                "bgcolor": "rgba(20, 25, 35, 0.8)",
+                "borderwidth": 1,
+                "bordercolor": "rgba(255,255,255,0.1)"
             },
             "hoverlabel": {
                 "bgcolor": cls.CARD_BG_SOLID,
                 "bordercolor": cls.BORDER_GLOW,
-                "font": {"color": cls.TEXT_PRIMARY, "size": 11}
+                "font": {"color": cls.TEXT_PRIMARY, "size": 12}
             },
             "transition": {
                 "duration": 300,

@@ -1,4 +1,4 @@
-# HFT Live Dashboard - Python Dependencies
+# AlgoViz - Python Dependencies
 # Python 3.11 compatible
 
 # UI Framework
@@ -24,8 +24,7 @@ requests
 
 # ML / Statistical Analysis (lightweight)
 # Note: Using numpy/scipy for core ML to keep container small
-# For production ML, uncomment below:
-# scikit-learn
+scikit-learn
 # xgboost
 
 # Testing

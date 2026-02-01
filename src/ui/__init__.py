@@ -1,4 +1,4 @@
-# HFT Live Dashboard - UI Package
+# AlgoViz Dashboard - UI Package
 # Contains theme, charts, and components
 
 from .theme import Theme
